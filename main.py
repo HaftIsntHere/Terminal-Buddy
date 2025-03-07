@@ -21,10 +21,17 @@ class CommandResponse(BaseModel):
 
 
 data: dict[str, str | list] = json.load(open("config.json", "r"))
-provider: str = data.get("provider", "ollama")  # default: ollama
+provider: str = data.get("provider")  # default: ollama
 key: str | None = data.get("api_key")
 if key == None and provider != "ollama":
-    raise Exception("API key not found in config.json")
+    key = input("Enter API key: ")
+    data["api_key"] = key
+
+if provider == None:
+    provider = input(
+        "Enter provider to use, leave empty for ollama. Available providers: [openai, openrouter, ollama]: "
+    )
+    data["provider"] = provider
 
 # print(key)
 
@@ -87,15 +94,18 @@ messageHistory.append(
     }
 )
 
-model = data.get("model", "llama3.2")  # default: ollama llama 3.2 3b model
+model = data.get("model")
 maxTokens: int = data.get("maxTokens", 1024)
 repeatition = data.get("repeatRequest", False)
 todo_list = data.get("todo_list", [])
-
 availProviders = ["openai", "openrouter", "ollama"]
 
 if provider not in availProviders:
     raise Exception("Invalid/Unsupported provider in config.json")
+
+if model == None:
+    model = input("Enter model to use: ")
+    data["model"] = model
 
 
 def aiPrompt(user_input: str):
