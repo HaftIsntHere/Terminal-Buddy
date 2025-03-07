@@ -1,0 +1,6 @@
+{
+  "provider": "openrouter",
+  "model": "liquid/lfm-3b",
+  "api_key": "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",
+  "repeatRequest": true
+}
