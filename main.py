@@ -20,7 +20,11 @@ class CommandResponse(BaseModel):
     commands: Optional[list[str]] = []
 
 
-data: dict[str, str | list] = json.load(open("config.json", "r"))
+data = None
+try:
+    data: dict[str, str | list] = json.load(open("config.json", "r"))
+except:
+    data = {}
 provider: str = data.get("provider")  # default: ollama
 key: str | None = data.get("api_key")
 if key == None and provider != "ollama":
@@ -251,13 +255,16 @@ def get_search(query):
 
 def get_play(query):
     url = f"https://searchbuddy.app/api/getYoutubeVideo"
-    response = requests.get(url, params={"q": query})
+    response = requests.get(url, params={"q": query})   
+    
     return f"https://www.youtube.com/watch?v={response.json()["id"]}"
 
 
 def execute_command(response):
     if response == "exit":
         click.echo(click.style("Exiting...", fg="red"))
+        data["todo_list"] = todo_list
+        json.dump(data, open("config.json", "w"))
         exit()
     elif match := re.match(r"timer:(\d+)(?::(.+))?", response):
         seconds, reason = match.groups()
@@ -284,9 +291,6 @@ Reason: {reason}""",
             click.echo("You: ")
 
         threading.Thread(target=timer_thread, args=(seconds, reason)).start()
-    elif response == "exit":
-        click.echo(click.style("Exiting...", fg="red"))
-        exit()
     elif match := re.match(r"todo:(.+)", response):
         task = match.group(1)
         todo_list.append(task)
@@ -369,5 +373,3 @@ def cli_buddy():
 
 if __name__ == "__main__":
     cli_buddy()
-    data["todo_list"] = todo_list
-    json.dump(data, open("config.json", "w"))
