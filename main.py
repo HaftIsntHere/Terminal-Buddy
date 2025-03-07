@@ -10,7 +10,6 @@ from typing import Optional
 # providers
 import ollama
 from openai import OpenAI
-from anthropic import Anthropic
 import requests
 
 # terminal buddy
@@ -101,7 +100,7 @@ maxTokens: int = data.get("maxTokens", 1024)
 repeatition = data.get("repeatRequest", False)
 todo_list = data.get("todo_list", [])
 
-availProviders = ["openai", "openrouter", "ollama", "claude"]
+availProviders = ["openai", "openrouter", "ollama"]
 
 if provider not in availProviders:
     raise Exception("Invalid/Unsupported provider in config.json")
@@ -112,18 +111,58 @@ def aiPrompt(user_input: str):
         case "openai":
             openAIClient = OpenAI(api_key=key, model=model)
             messageHistory.append({"role": "user", "content": user_input})
-            comp = openAIClient.completions.create(
-                prompt=user_input, max_tokens=maxTokens, messages=messageHistory
-            )
 
-            messageHistory.append(
-                {
-                    "role": "assistant",
-                    "content": comp.choices[0].message.content.strip(),
-                }
-            )
-            return comp.choices[0].message.content.strip()
+            def getRes():
+                comp = openAIClient.chat.completions.create(
+                    extra_body={},
+                    model=model,
+                    max_tokens=maxTokens,
+                    messages=messageHistory,
+                    response_format="json",
+                    # response_format={type:"json_schema", "json_schema": CommandResponse.model_json_schema()},
+                )
 
+                # print(comp.choices)
+                # print("message.content: ", comp.choices[0].message.content)
+                # print(comp.choices[0].message.content)
+                shouldContinue = True
+                try:
+                    message = CommandResponse.model_validate_json(
+                        comp.choices[0].message.content
+                    )
+                except:
+                    if repeatition:
+                        messageHistory.append(
+                            {
+                                "role": "assistant",
+                                "content": comp.choices[0].message.content,
+                            }
+                        )
+                        messageHistory.append(
+                            {
+                                "role": "system",
+                                "content": 'Please ONLY respond in the format: {"commands": [], "message": ""}',
+                            }
+                        )
+                        return getRes()
+                    else:
+                        raise Exception("Invalid response format from OpenRouter")
+                    # shouldContinue = False
+                # click.echo(message)
+                # message: CommandResponse = json.loads(
+                #     command_response
+                # )
+                # print("message: ", message)
+                if shouldContinue:
+                    messageHistory.append(
+                        {
+                            "role": "assistant",
+                            "content": comp.choices[0].message.content,
+                        }
+                    )
+                    return message
+
+            return getRes()
         case "openrouter":
             openRouterClient = OpenAI(
                 base_url="https://openrouter.ai/api/v1", api_key=key
@@ -181,7 +220,6 @@ def aiPrompt(user_input: str):
                     return message
 
             return getRes()
-
         case "ollama":
             messageHistory.append({"role": "user", "content": user_input})
             comp: ollama.ChatResponse = ollama.chat(
@@ -195,18 +233,6 @@ def aiPrompt(user_input: str):
             )
 
             return command_response
-
-        case "claude":
-            messageHistory.append({"role": "user", "content": user_input})
-            anthropicClient = Anthropic(api_key=key)
-
-            comp = anthropicClient.completions.create(
-                model=model,
-                max_tokens_to_sample=maxTokens,
-                messages=messageHistory,
-            )
-
-            return comp.content
 
 
 def get_weather(city):
