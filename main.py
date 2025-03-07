@@ -359,3 +359,5 @@ def cli_buddy():
 
 if __name__ == "__main__":
     cli_buddy()
+    data["todo_list"] = todo_list
+    json.dump(data, open("config.json", "w"))
