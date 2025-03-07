@@ -68,14 +68,6 @@ messageHistory.append(
   **Usage:** `clear`  
   _Clears the terminal screen._
 
-- **stopwatch:**  
-  **Usage Options:**  
-    - `stopwatch:start` – Start the stopwatch.  
-    - `stopwatch:pause` – Pause the stopwatch.  
-    - `stopwatch:stop` – Stop the stopwatch.  
-    - `stopwatch:lap` – Record a lap time.  
-    - `stopwatch:resume` – Resume the stopwatch.
-
 - **play:**  
   **Usage:** `play:query`  
   **Example:** `play:Imagine Dragons Believer`  
